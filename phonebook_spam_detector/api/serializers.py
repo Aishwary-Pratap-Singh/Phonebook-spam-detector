@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User
+from .models import User, Contact
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -11,3 +11,10 @@ class UserSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         user = User.objects.create_user(**validated_data)
         return user
+
+
+class ContactSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Contact
+        fields = ('id', 'user', 'name', 'phone_number', 'email', 'is_spam')
+        read_only_fields = ('user',)
