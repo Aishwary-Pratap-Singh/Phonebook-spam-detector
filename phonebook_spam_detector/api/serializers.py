@@ -18,3 +18,12 @@ class ContactSerializer(serializers.ModelSerializer):
         model = Contact
         fields = ('id', 'user', 'name', 'phone_number', 'email', 'is_spam')
         read_only_fields = ('user',)
+
+
+class SpamReportSerializer(serializers.Serializer):
+    phone_number = serializers.CharField(max_length=15)
+
+    def validate_phone_number(self, value):
+        if not Contact.objects.filter(phone_number=value).exists():
+            raise serializers.ValidationError("Contact with this phone number does not exist.")
+        return value

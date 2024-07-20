@@ -1,16 +1,14 @@
-from rest_framework import generics
 from .models import User
 from .serializers import UserSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth import authenticate
-from rest_framework import generics
+from rest_framework import generics, status
 from .models import Contact
-from .serializers import ContactSerializer
-from rest_framework.permissions import IsAuthenticated
-
+from .serializers import ContactSerializer, SpamReportSerializer
+# from rest_framework.permissions import IsAuthenticated
 
 class UserCreate(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -50,3 +48,19 @@ class ContactDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         return Contact.objects.filter(user=self.request.user)
+
+
+class SpamReportView(generics.GenericAPIView):
+    serializer_class = SpamReportSerializer
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        phone_number = serializer.validated_data['phone_number']
+        contact = Contact.objects.get(phone_number=phone_number)
+        contact.spam_reports += 1
+        if contact.spam_reports > 2:  # Example threshold for marking as spam
+            contact.is_spam = True
+        contact.save()
+        return Response({"status": "reported"}, status=status.HTTP_200_OK)
