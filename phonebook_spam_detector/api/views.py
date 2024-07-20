@@ -1,13 +1,15 @@
-from .models import User
+from .models import User, Contact
 from .serializers import UserSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth import authenticate
-from rest_framework import generics, status
-from .models import Contact
+from rest_framework import generics, status, filters
 from .serializers import ContactSerializer, SpamReportSerializer
+from django.db import models  # Add this import
+
+
 # from rest_framework.permissions import IsAuthenticated
 
 class UserCreate(generics.CreateAPIView):
@@ -64,3 +66,19 @@ class SpamReportView(generics.GenericAPIView):
             contact.is_spam = True
         contact.save()
         return Response({"status": "reported"}, status=status.HTTP_200_OK)
+
+
+class ContactSearchView(generics.ListAPIView):
+    serializer_class = ContactSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = Contact.objects.filter(user=self.request.user)
+        query = self.request.query_params.get('q')
+        if query:
+            queryset = queryset.filter(
+                models.Q(name__icontains=query) |
+                models.Q(phone_number__icontains=query) |
+                models.Q(email__icontains=query)
+            )
+        return queryset

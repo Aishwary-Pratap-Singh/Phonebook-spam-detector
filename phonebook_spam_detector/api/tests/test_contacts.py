@@ -78,3 +78,40 @@ class ContactTests(APITestCase):
         self.contact.refresh_from_db()
         self.assertEqual(self.contact.spam_reports, 3)
         self.assertTrue(self.contact.is_spam)
+
+
+class ContactSearchTests(APITestCase):
+
+    def setUp(self):
+        self.user = User.objects.create_user(username='testuser', password='testpassword', phone_number='1234567890', email='test@example.com')
+        self.client.login(username='testuser', password='testpassword')
+        self.client.force_authenticate(user=self.user)
+        self.contact1 = Contact.objects.create(user=self.user, name='John Doe', phone_number='1234567890', email='john@example.com')
+        self.contact2 = Contact.objects.create(user=self.user, name='Jane Smith', phone_number='0987654321', email='jane@example.com')
+
+    def test_search_contacts_by_name(self):
+        url = reverse('contact-search')
+        response = self.client.get(url, {'q': 'John'}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['name'], 'John Doe')
+
+    def test_search_contacts_by_phone_number(self):
+        url = reverse('contact-search')
+        response = self.client.get(url, {'q': '0987654321'}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['phone_number'], '0987654321')
+
+    def test_search_contacts_by_email(self):
+        url = reverse('contact-search')
+        response = self.client.get(url, {'q': 'jane@example.com'}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['email'], 'jane@example.com')
+
+    def test_search_contacts_no_results(self):
+        url = reverse('contact-search')
+        response = self.client.get(url, {'q': 'Nonexistent'}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 0)
