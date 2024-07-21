@@ -1,6 +1,6 @@
 from django.test import TestCase
-from .models import User, Contact
-from .serializers import ContactSerializer
+from ..models import User, Contact
+from ..serializers import ContactSerializer
 
 class ContactSerializerTests(TestCase):
 
