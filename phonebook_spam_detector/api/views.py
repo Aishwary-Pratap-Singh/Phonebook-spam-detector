@@ -7,7 +7,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth import authenticate
 from rest_framework import generics, status, filters
 from .serializers import ContactSerializer, SpamReportSerializer
-from django.db import models  # Add this import
+from django.db import models
 
 
 # from rest_framework.permissions import IsAuthenticated
@@ -62,7 +62,7 @@ class SpamReportView(generics.GenericAPIView):
         phone_number = serializer.validated_data['phone_number']
         contact = Contact.objects.get(phone_number=phone_number)
         contact.spam_reports += 1
-        if contact.spam_reports > 2:  # Example threshold for marking as spam
+        if contact.spam_reports > 2:
             contact.is_spam = True
         contact.save()
         return Response({"status": "reported"}, status=status.HTTP_200_OK)
